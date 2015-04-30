@@ -202,13 +202,31 @@ To recap:
 
 ## 4. sensu_master in EC2
 
-- We'll need a security group with correct ingress/egress
-- I'm tempted to see if aws_launch_configuration will work to create an auto-scale group of one - since it supports a hash of options per http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/AutoScaling/LaunchConfigurationCollection.html, then: 'it should'
+- We'll need a security group with correct ingress/egress. The default security group for the default VPC seems to allow inter-node communication
 
-- Create data bag on chef server:
-knife data bag create sensu
-knife data bag from file sensu test/integration/data_bags/sensu/ssl.json
+- For node self-configuration, using a USER_DATA script which is in cookbooks/sensu_master/recipes/aws.rb.
+
+- Create data bag on chef server so the server has SSL certificates:
+
+    knife data bag create sensu
+    knife data bag from file sensu test/integration/data_bags/sensu/ssl.json
+
+- Make attribute for `node[monitor][master_address]` which comes from, for now, an environment
+  - Ideally, the sensu_master would use `route53` to set its own DNS, but that requires `fog`, and hence `nokogiri`, and that's just too painful. So I've manually set the CNAME for sensu_master.cheffian.com
+  - To set the attribute for the sensu_master, I have stuck that in a 'conjur' chef_environment:
+
+    knife environment from file conjur.json
 
 - Now - I have cookbooks loaded, should be able to
 
     conjur env run -- chef-client -z sensu_master/recipes/aws.rb
+
+- That works as tagged "sensu_master/0.1.0"
+
+- To use, ssh as below then use FoxyProxy socks5 dynamic proxy through localhost:3128 to reach http://sensu_master.cheffian.com:3000.  user: admin, password: supersecret
+
+    ssh -D 3128 ubuntu@sensu_master.cheffian.com
+
+## 5 sensu_client in TK
+
+We'll start with test-kitchen-ec2 and crib off the 'conjur' cookbook for the .kitchen.yml
