@@ -1,6 +1,16 @@
 ---
 driver:
-  name: vagrant
+  name: ec2
+  aws_access_key_id: <%= ENV['AWS_ACCESS_KEY_ID'] %>
+  aws_secret_access_key: <%= ENV['AWS_SECRET_ACCESS_KEY'] %>
+  aws_ssh_key_id: pburkholder-one
+  ssh_key: ~/.ssh/pburkholder-one.pem
+  region: us-east-1
+  availability_zone: us-east-1c
+  flavor_id: m3.medium
+#  security_group_ids: sg-7c6eef16
+  ssh_timeout: 10
+  ssh_retries: 5
 
 provisioner:
   name: chef_zero
@@ -10,6 +20,9 @@ platforms:
   - name: ubuntu-14.04
     run_list:
       - recipe[apt]
+    driver:
+      image_id: ami-9eaa1cf6
+      username: ubuntu
 
 suites:
   - name: default
