@@ -254,7 +254,7 @@ Need a group:
 
 Create a layer
 
-    conjur layer create sensu/generic
+    conjur layer create --as-group demo sensu/generic
     {
       "id": "sensu/generic",
       "userid": "pburkholder",
@@ -264,13 +264,7 @@ Create a layer
       "hosts": [ ]
     }
 
-
-Create a host factory for the sensu/generic layer
-
-    conjur hostfactory create --as-group demo -l sensu/generic sensu/generic
-
-
-To enable this, update `~/.conjurrc` with
+Install the hostfactory plugin. To enable this, update `~/.conjurrc` with
 
     plugins:
     - ui-beta
@@ -283,6 +277,11 @@ And install with:
     unset GEM_ROOT
     sudo /opt/conjur/embedded/bin/gem install conjur-asset-host-factory
     exit
+
+Now that that is installed, create a host factory for the sensu/generic layer
+
+    conjur hostfactory create --as-group demo -l sensu/generic sensu/generic
+
 
 Then we get this output with the above command:
 
@@ -299,7 +298,21 @@ Then we get this output with the above command:
       "deputy_api_key": "3ncr3hf236z8sf1sf10w3yt48tj3q9tpmw8685zf3gkr8ns3q7qhc7"
     }
 
-Now create a token which expires in 6 hours
+
+Since the hostfactory is going to be creating hosts in the layer, sensu/generic, we want to grant the  execute privileges on the sensu variables to that layer:
+
+    conjur resource permit variable:monitor/rabbitmq/user layer:sensu/generic execute
+    conjur resource permit variable:monitor/rabbitmq/password layer:sensu/generic execute
+
+
+*About ownership and roles.*
+
+We'll think backwards about this.
+  - We want hosts to read variables, so we grant them 'execute' privileges
+  - The hosts don't exist yet, but they'll be in the layer sensu/generic, so we grant that layer the execute privilege with:
+      conjur resource permit variable:monitor/rabbitmq/user layer:sensu/generic execute
+  - Who gets to administrate that layer and the hostfactory? Members of the demo group, which is why we used `--as-group demo` with the 'conjur layer create' and `conjur hostfactory create`
+  - Now create a token which expires in 6 hours. This is executed by you on the workstation, you're a member of the 'demo' so you have the privileges to create new tokens, then tokens are used to create new hosts in the sensu/generic layer, and that layer has already been granted 'execute' on the variables:
 
     conjur hostfactory tokens create --duration-hours=6 sensu/generic
 
@@ -310,30 +323,68 @@ Now create a token which expires in 6 hours
       }
     ]
 
-Grant the hostfactory's group execute privileges on the sensu variables:
-
-    conjur resource permit variable:monitor/rabbitmq/user group:demo execute
-    conjur resource permit variable:monitor/rabbitmq/password group:demo execute
-
+*Testing*
 
 To test on the TK node, added 'conjur.rb' to sensu_client/{recipes,attributes}, and on the node:
 
     # as root
+
+    # Install the hostfactory plugin:
     /opt/conjur/embedded/bin/gem install conjur-asset-host-factory
+
+    # Enable the plugin:
     cat <<END>>/etc/conjur.conf
     plugins: [ host-factory ]
     END
 
-    conjur hostfactory hosts create 26e3zzy2ybqzq16vgb70hnxc383kk1ppa3ny3q9g30pb5b3911t5h ip-172-31-41-127
+    # Use the hostfactory token to create a host:
+    conjur hostfactory hosts create 26e3zzy2ybqzq16vgb70hnxc383kk1ppa3ny3q9g30pb5b3911t5h ec2/i-9e64bf48
+    #  {
+    #    "id": "ec2/i-9e64bf48",
+    #    "userid": "deputy/sensu/generic",
+    #    "created_at": "2015-04-30T20:23:08Z",
+    #    "ownerid": "chef:group:demo",
+    #    "roleid": "chef:host:ec2/i-9e64bf48",
+    #    "resource_identifier": "chef:host:ec2/i-9e64bf48",
+    #    "api_key": "2ndsa2h3cpgj5p2n7cmbx1q0vxq51shqatx2cdckyw2ds25zpgx71eh"
+    #  }
 
-    {"errors":["host factory role chef:group:demo does not have access to layer sensu/generic"]}
+    # Now write these to /etc/conjur.identity
+    cat <<END>/etc/conjur.identity
+    machine https://ec2-54-90-25-181.compute-1.amazonaws.com/api/authn
+    login host/ec2/i-9e64bf48
+    password 2ndsa2h3cpgj5p2n7cmbx1q0vxq51shqatx2cdckyw2ds25zpgx71eh
+    END
+
+    # Fix perms
+    chmod 0400 /etc/conjur.identity
+
+    # Test
+    conjur variable value monitor/rabbitmq/user
+
+     # Fini
 
 
-Back on workstation
+### Fixing broken permissions:
+
+The first time I did this, I ran the following w/o the `--as-group demo` argument
+
+    conjur layer create sensu/generic
+
+Fixed this with Justin Gilpin's help:
+
+    # give ownership on the layer to chef:group:demo
+    conjur resource give chef:layer:sensu/generic chef:group:demo
+
+    # grant group:demo the admin role (`-a`) over layer:sensu/generic
+    conjur role grant_to -a layer:sensu/generic group:demo
+
+    # review the state of permissions:
+    conjur layer show sensu/generic
+    conjur resource show layer:sensu/generic
+    conjur role memberships group:demo
+
+I also did these commands when things were borked, I have no idea if they were needed or not:
 
     conjur layer hosts permit sensu/generic group:demo update
-
-Then on node:
-
-    conjur hostfactory hosts create 26e3zzy2ybqzq16vgb70hnxc383kk1ppa3ny3q9g30pb5b3911t5h ip-172-31-41-127
-    {"errors":["host factory role chef:group:demo does not have required layer ownership role chef:user:pburkholder"]}  
+    conjur layer hosts permit sensu/generic group:demo execute
