@@ -12,7 +12,7 @@ raise "Need login and password from conjur env" if ( login.nil? || password.nil?
 
 
 user_data = <<END_SCRIPT
-#!/bin/bash
+#!/bin/bash -xv
 
 # Install chef-client
 curl -L https://www.opscode.com/chef/install.sh | bash /dev/stdin -v 12.3.0

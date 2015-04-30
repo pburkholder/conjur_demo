@@ -240,6 +240,100 @@ then we work with hostfactory
 
 ### Hostfactory
 
+Need a group:
+
+    conjur group create demo
+
+    {
+      "id": "demo",
+      "userid": "pburkholder",
+      "ownerid": "chef:user:pburkholder",
+      "roleid": "chef:group:demo",
+      "resource_identifier": "chef:group:demo"
+    }
+
+Create a layer
+
+    conjur layer create sensu/generic
+    {
+      "id": "sensu/generic",
+      "userid": "pburkholder",
+      "ownerid": "chef:user:pburkholder",
+      "roleid": "chef:layer:sensu/generic",
+      "resource_identifier": "chef:layer:sensu/generic",
+      "hosts": [ ]
+    }
+
+
 Create a host factory for the sensu/generic layer
 
-    conjur hostfactory create  -l v1/dev/webserver v1/dev/webserver
+    conjur hostfactory create --as-group demo -l sensu/generic sensu/generic
+
+
+To enable this, update `~/.conjurrc` with
+
+    plugins:
+    - ui-beta
+    - host-factory
+
+And install with:
+
+    bash
+    unset GEM_HOME
+    unset GEM_ROOT
+    sudo /opt/conjur/embedded/bin/gem install conjur-asset-host-factory
+    exit
+
+Then we get this output with the above command:
+
+    {
+      "id": "sensu/generic",
+      "layers": [
+        "sensu/generic"
+      ],
+      "roleid": "chef:group:demo",
+      "resourceid": "chef:host_factory:sensu/generic",
+      "tokens": [
+
+      ],
+      "deputy_api_key": "3ncr3hf236z8sf1sf10w3yt48tj3q9tpmw8685zf3gkr8ns3q7qhc7"
+    }
+
+Now create a token which expires in 6 hours
+
+    conjur hostfactory tokens create --duration-hours=6 sensu/generic
+
+    [
+      {
+        "token": "26e3zzy2ybqzq16vgb70hnxc383kk1ppa3ny3q9g30pb5b3911t5h",
+        "expiration": "2015-04-30T22:33:31+00:00"
+      }
+    ]
+
+Grant the hostfactory's group execute privileges on the sensu variables:
+
+    conjur resource permit variable:monitor/rabbitmq/user group:demo execute
+    conjur resource permit variable:monitor/rabbitmq/password group:demo execute
+
+
+To test on the TK node, added 'conjur.rb' to sensu_client/{recipes,attributes}, and on the node:
+
+    # as root
+    /opt/conjur/embedded/bin/gem install conjur-asset-host-factory
+    cat <<END>>/etc/conjur.conf
+    plugins: [ host-factory ]
+    END
+
+    conjur hostfactory hosts create 26e3zzy2ybqzq16vgb70hnxc383kk1ppa3ny3q9g30pb5b3911t5h ip-172-31-41-127
+
+    {"errors":["host factory role chef:group:demo does not have access to layer sensu/generic"]}
+
+
+Back on workstation
+
+    conjur layer hosts permit sensu/generic group:demo update
+
+Then on node:
+
+    conjur hostfactory hosts create 26e3zzy2ybqzq16vgb70hnxc383kk1ppa3ny3q9g30pb5b3911t5h ip-172-31-41-127
+    {"errors":["host factory role chef:group:demo does not have required layer ownership role chef:user:pburkholder"]}  

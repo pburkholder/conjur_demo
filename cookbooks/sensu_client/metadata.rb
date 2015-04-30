@@ -7,4 +7,5 @@ long_description 'Installs/Configures sensu_client'
 version          '0.1.0'
 
 depends 'apt'
+depends 'conjur'
 depends 'sensu'
