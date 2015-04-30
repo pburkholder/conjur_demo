@@ -371,7 +371,7 @@ The first time I did this, I ran the following w/o the `--as-group demo` argumen
 
     conjur layer create sensu/generic
 
-Fixed this with Justin Gilpin's help:
+Fixed this with Kevin Gilpin's help:
 
     # give ownership on the layer to chef:group:demo
     conjur resource give chef:layer:sensu/generic chef:group:demo
