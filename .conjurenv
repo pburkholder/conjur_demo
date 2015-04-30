@@ -1,0 +1,2 @@
+conjur_authn_login: !var monitor/sensu_master/conjur_login
+conjur_authn_api_key: !var monitor/sensu_master/conjur_api_key

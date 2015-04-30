@@ -1,0 +1,17 @@
+{
+  "name": "conjur",
+  "description": "The Conjur Demo Environment",
+  "cookbook_versions": {
+
+  },
+  "json_class": "Chef::Environment",
+  "chef_type": "environment",
+  "default_attributes": {
+    "monitor": {
+      "master_address" : "sensu_master.cheffian.com"
+    }
+  },
+  "override_attributes": {
+
+  }
+}
