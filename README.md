@@ -230,3 +230,16 @@ To recap:
 ## 5 sensu_client in TK
 
 We'll start with test-kitchen-ec2 and crib off the 'conjur' cookbook for the .kitchen.yml
+
+Once we get that to work with vanilla attributes, e.g.:
+
+    default["sensu"]["rabbitmq"]["user"]= "user_from_conjur"
+    default["sensu"]["rabbitmq"]["password"]= "password_from_conjur"
+
+then we work with hostfactory
+
+### Hostfactory
+
+Create a host factory for the sensu/generic layer
+
+    conjur hostfactory create  -l v1/dev/webserver v1/dev/webserver

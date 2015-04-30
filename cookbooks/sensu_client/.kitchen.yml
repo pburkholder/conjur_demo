@@ -29,3 +29,5 @@ suites:
     run_list:
       - recipe[sensu_client::default]
     attributes:
+      monitor:
+        master_address: sensu_master.cheffian.com
