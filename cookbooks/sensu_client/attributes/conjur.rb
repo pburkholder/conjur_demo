@@ -4,7 +4,8 @@
 default['conjur']['configuration']['account'] = 'chef'
 default['conjur']['configuration']['appliance_url'] \
   = 'https://ec2-54-90-25-181.compute-1.amazonaws.com/api'
-default['conjur']['configuration']['plugins'] = []
+
+default['conjur']['configuration']['plugins'] = ['host-factory']
 
 default['conjur']['configuration']['ssl_certificate'] = <<END_SSL
 -----BEGIN CERTIFICATE-----

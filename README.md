@@ -131,11 +131,12 @@ How to get to the value of the 'test/username' variable, starting from `sudo pry
 
 So this means using the env vars to set the /etc/identity, and then the conjur gem to fetch. See recipe/conjurized.
 
-
+```
 for var in user password; do
   conjur variable create monitor/rabbitmq/$var ${var}_from_conjur
   conjur resource permit variable:monitor/rabbitmq/$var host:sensu_master execute
 done
+```
 
 And that completely works -- although the secrets are exposed as file diffs.
 
@@ -314,6 +315,7 @@ We'll think backwards about this.
   - Who gets to administrate that layer and the hostfactory? Members of the demo group, which is why we used `--as-group demo` with the 'conjur layer create' and `conjur hostfactory create`
   - Now create a token which expires in 6 hours. This is executed by you on the workstation, you're a member of the 'demo' so you have the privileges to create new tokens, then tokens are used to create new hosts in the sensu/generic layer, and that layer has already been granted 'execute' on the variables:
 
+```
     conjur hostfactory tokens create --duration-hours=6 sensu/generic
 
     [
@@ -322,6 +324,7 @@ We'll think backwards about this.
         "expiration": "2015-04-30T22:33:31+00:00"
       }
     ]
+```
 
 *Testing*
 
@@ -388,3 +391,56 @@ I also did these commands when things were borked, I have no idea if they were n
 
     conjur layer hosts permit sensu/generic group:demo update
     conjur layer hosts permit sensu/generic group:demo execute
+
+
+## How to get rolling with Conjur after two weeks away
+
+First, am I logged in?  Tries the following commands:
+
+```
+conjur authn whoami
+conjur variable list
+conjur variable show monitor/rabbitmq/user
+```
+
+And is my sensu_master still running?
+
+```
+aws ec2 describe-instances --filters Name=key-name,Values="pburkholder-one"
+```
+
+It is.  And it' still at `sensu_master.cheffian.com`. Conjur still works, but can't get variable:
+
+```
+$ conjur authn whoami
+{"account":"chef","username":"host/sensu_master"}
+
+$ conjur variable show monitor/rabbitmq/password
+error: 403 Forbidden
+```
+
+Ah, but it can fetch the value:
+
+```
+$ conjur variable value monitor/rabbitmq/password
+Boom!
+```
+
+
+## Continuing with autoscale
+
+In `sensu_client/recipes/aws.rb` I'll update the userdata to include the hostfactory token and to get it written at boot time.
+
+I'll also just spin up a single client.
+
+```
+conjur hostfactory tokens create --duration-hours=6 sensu/generic
+```
+
+Next:
+- update `sensu_client/recipes/aws.rb` to drop the hostfactory token onto box from userdata
+- update `sensu_client/recipes/conjur.rb` to
+  - install the netrc gem
+  - create the conjur group
+  - install the conjur-asset-host-factory gem into the conjur install
+  - use a ruby_block to exec the host-factory call and write response to conjur.identity
