@@ -444,3 +444,7 @@ Next:
   - create the conjur group
   - install the conjur-asset-host-factory gem into the conjur install
   - use a ruby_block to exec the host-factory call and write response to conjur.identity
+- these changes committed at c7cd234e1e05927f46575891d2abc0cfacd98897 and uploaded to pdbchef chef server.
+- next:
+  - make new hostfactory token and add to aws.rb recipe
+  - run `chef-client -z sensu_client/recipes/aws.rb` and see what happens
