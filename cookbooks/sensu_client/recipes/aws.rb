@@ -11,6 +11,10 @@ node_name                = 'sensu_client' # instance name gets appended
 user_data = <<END_SCRIPT
 #!/bin/bash -xv
 
+# Set HOME env default
+: ${HOME:=/root}
+export HOME
+
 cat <<END_TOKEN>/etc/conjur_hostfactory_token
 #{token}
 END_TOKEN
@@ -83,37 +87,38 @@ touch /etc/chef/ohai/hints/ec2.json
 exit
 END_SCRIPT
 
-
+example='autoscale'
 
 with_driver 'aws::us-east-1' do
-#  aws_launch_configuration 'peterb-sensu-master' do
-#    image 'ami-d85e75b0'  # Trusty
-#    instance_type 'm3.medium'
-#    options({
-#      security_groups: ['sg-2ee7694b'],
-#      key_pair: 'pburkholder-one',
-#      user_data: user_data
-#    })
-#  end
-#
-#  aws_auto_scaling_group 'peterb-sensu-master' do
-#    desired_capacity 1
-#    min_size 1
-#    max_size 1
-#    launch_configuration 'peterb-sensu-master'
-#    availability_zones ['us-east-1c']
-#  end
-  machine 'sensu_client' do
-    action :allocate
+  if example == 'autoscale'
+    aws_launch_configuration 'peterb-sensu-client' do
+      image 'ami-dc5e75b4'  # Trusty
+      instance_type 't2.micro'
+      options({
+        security_groups: ['sg-2ee7694b'],
+        key_pair: 'pburkholder-one',
+        user_data: user_data
+      })
+    end
 
-    add_machine_options bootstrap_options: {
-  #    vpc_id: 'vpc-64519c01',
-      instance_type: 'm1.small',
-      image_id: 'ami-d85e75b0',
-      security_group_ids: ['sg-2ee7694b' ],
-  #    security_groups: [ 'default' ],
-      key_name: 'pburkholder-one',
-      user_data: user_data
-    }
-  end
+    aws_auto_scaling_group 'peterb-sensu-client' do
+      desired_capacity 1
+      min_size 1
+      max_size 22
+      launch_configuration 'peterb-sensu-client'
+      availability_zones ['us-east-1c']
+    end
+  else
+    machine 'sensu_client' do
+      action :allocate
+
+      add_machine_options bootstrap_options: {
+        instance_type: 't2.micro',
+        image_id: 'ami-dc5e75b4',
+        security_group_ids: ['sg-2ee7694b' ],
+        key_name: 'pburkholder-one',
+        user_data: user_data
+      }
+    end
+  end # if autoscale
 end
