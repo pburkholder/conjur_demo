@@ -104,7 +104,7 @@ with_driver 'aws::us-east-1' do
     end
 
     aws_auto_scaling_group 'peterb-sensu-client' do
-      desired_capacity 1
+      desired_capacity 12
       min_size 1
       max_size 22
       launch_configuration 'peterb-sensu-client'
