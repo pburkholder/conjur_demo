@@ -5,7 +5,9 @@ validation_client_name   = 'pdbchef-validator'
 environment              = 'conjur'
 
 # host-factory key
-token = '2hnhtyx30fnfm9vjj5g13qbtr442xs0nmrfczqe78kdwh63kr758w'
+#token = '2hnhtyx30fnfm9vjj5g13qbtr442xs0nmrfczqe78kdwh63kr758w'
+raise ArgumentError, 'Need env var: HOST_FACTORY' if ENV['HOST_FACTORY'].nil?
+token = ENV['HOST_FACTORY']
 node_name                = 'sensu_client' # instance name gets appended
 
 user_data = <<END_SCRIPT

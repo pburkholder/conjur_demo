@@ -448,3 +448,45 @@ Next:
 - next:
   - make new hostfactory token and add to aws.rb recipe
   - run `chef-client -z sensu_client/recipes/aws.rb` and see what happens
+
+
+# DEMO
+
+
+## Getting set up as me:
+
+```
+conjur authn login
+conjur authn whoami
+
+more ~/.conjurrc
+
+conjur ui
+
+conjur variable value monitor/rabbitmq/user
+conjur variable value monitor/rabbitmq/password
+```
+
+## How I created the layer and the hostfactory
+
+```
+# conjur group create demo
+# conjur layer create --as-group demo sensu/generic
+# conjur hostfactory create --as-group demo -l sensu/generic sensu/generic
+```
+
+## Review permissions
+
+```
+conjur resource show layer:sensu/generic
+conjur layer show sensu/generic
+conjur hostfactory list
+```
+
+## Set up the autoscale group
+
+export HOST_FACTORY=`conjur hostfactory tokens create --duration-hours=1 sensu/generic | jsonfield 0.token`
+
+echo $HOST_FACTORY
+
+chef-client -z cookbooks/sensu_client/recipes/aws.rb
