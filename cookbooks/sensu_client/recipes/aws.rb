@@ -5,7 +5,7 @@ validation_client_name   = 'pdbchef-validator'
 environment              = 'conjur'
 
 # host-factory key
-token = '3gg3svw28ya0te2khxym4sre7kx2m337x6t41a1271axmk2rjv2m7'
+token = '2hnhtyx30fnfm9vjj5g13qbtr442xs0nmrfczqe78kdwh63kr758w'
 node_name                = 'sensu_client' # instance name gets appended
 
 user_data = <<END_SCRIPT
@@ -103,14 +103,16 @@ with_driver 'aws::us-east-1' do
 #    launch_configuration 'peterb-sensu-master'
 #    availability_zones ['us-east-1c']
 #  end
-  machine role do
+  machine 'sensu_client' do
     action :allocate
 
     add_machine_options bootstrap_options: {
+  #    vpc_id: 'vpc-64519c01',
       instance_type: 'm1.small',
       image_id: 'ami-d85e75b0',
-      security_groups: ['sg-2ee7694b' ],
-      key_pair: 'pburkholder-one',
+      security_group_ids: ['sg-2ee7694b' ],
+  #    security_groups: [ 'default' ],
+      key_name: 'pburkholder-one',
       user_data: user_data
     }
   end

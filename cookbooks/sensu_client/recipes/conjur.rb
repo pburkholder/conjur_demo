@@ -39,18 +39,18 @@ end.run_action(:create)
 
 gem_package 'conjur-asset-host-factory' do
   gem_binary '/opt/conjur/embedded/bin/gem'
-end.run_action(:create)
+end.run_action(:install)
 
 ruby_block "generate conjur identity" do
   not_if  { ::File::exists?('/etc/conjur.identity') }
   only_if { ::File.exists?('/etc/conjur_hostfactory_token') }
   block do
     require 'json'
-    hostfactory_token = ::File.read '/etc/conjur_hostfactory_token'
+    hostfactory_token = ::File.read('/etc/conjur_hostfactory_token').chomp
     conjur_json = %x(
       /usr/local/bin/conjur hostfactory hosts create #{hostfactory_token} #{node.name}
     )
-    conjur_response = JSON.parse(conjur.json)
+    conjur_response = JSON.parse(conjur_json)
     conjur_identity = <<END_ID
 machine   #{node['conjur']['configuration']['appliance_url']}/authn
 login     host/#{node.name}
