@@ -1,5 +1,9 @@
 # DEMO
 
+### Major points to make
+
+- 
+
 ----
 
 ## Goal
@@ -81,7 +85,10 @@ chef-client -z cookbooks/sensu_client/recipes/aws.rb
 
 ## Look at recipe
 
----
+<br>
+
+----
+
 ## Review permissions
 
 ```
@@ -89,3 +96,14 @@ conjur resource show layer:sensu/generic
 conjur layer show sensu/generic
 conjur hostfactory list
 ```
+
+----
+
+
+## thoughts on Chef Vault
+
+- No clear-txt secrets in version control
+- audit trail is in conjur instead of SCM
+- no role impersonation
+- no databag write lock issues
+- Easier to use?

@@ -7,5 +7,5 @@ default["sensu"]["rabbitmq"]["host"] = "sensu_master.cheffian.com"
 default["sensu"]["redis"]["host"] ="sensu_master.cheffian.com"
 default["sensu"]["api"]["host"] = "sensu_master.cheffian.com"
 
-default["sensu"]["rabbitmq"]["user"]= "user_from_conjur"
-default["sensu"]["rabbitmq"]["password"]= "password_from_conjur"
+default["sensu"]["rabbitmq"]["user"]= "user_default"
+default["sensu"]["rabbitmq"]["password"]= "password_default"

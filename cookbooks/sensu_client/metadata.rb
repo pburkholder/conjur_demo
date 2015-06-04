@@ -4,7 +4,7 @@ maintainer_email 'you@example.com'
 license          'all_rights'
 description      'Installs/Configures sensu_client'
 long_description 'Installs/Configures sensu_client'
-version          '0.2.3'
+version          '0.3.0'
 
 depends 'apt'
 depends 'conjur'
